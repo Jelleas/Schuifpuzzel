@@ -5,11 +5,12 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        PuzzleSolver solver = new PuzzleSolver();
+
+        Puzzle p = Puzzle.initPuzzle1();
 
         long startTime = System.currentTimeMillis();
 
-        List<Puzzle> solution = solver.solve(Puzzle.initPuzzle1());
+        List<Puzzle> solution = p.solve();
 
         long endTime = System.currentTimeMillis();
 

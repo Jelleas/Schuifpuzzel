@@ -1,7 +1,6 @@
 package com.company;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Puzzle {
     private class Coord {
@@ -86,6 +85,38 @@ public class Puzzle {
                 repr += this.puzzle[i][j].getSign() + ",";
 
         return repr;
+    }
+
+    public List<Puzzle> solve() {
+        LinkedList<LinkedList<Puzzle>> queue = new LinkedList<LinkedList<Puzzle>>();
+        Set<Puzzle> set = new HashSet<Puzzle>();
+
+        LinkedList<Puzzle> path = new LinkedList<Puzzle>();
+        path.addFirst(this);
+        queue.addFirst(path);
+        set.add(this);
+
+        while (!queue.isEmpty()) {
+            LinkedList<Puzzle> currentPath = queue.poll();
+            Puzzle currentPuzzle = currentPath.peek();
+
+            if (currentPuzzle.isSolved())
+                return currentPath;
+
+            List<Puzzle> reachables = currentPuzzle.getReachables();
+
+            for (Puzzle reachable : reachables) {
+                if (set.contains(reachable))
+                    continue;
+
+                set.add(reachable);
+                LinkedList<Puzzle> reachablePath = new LinkedList<Puzzle>(currentPath);
+                reachablePath.addFirst(reachable);
+                queue.addLast(reachablePath);
+            }
+        }
+
+        return null;
     }
 
     public List<Puzzle> getReachables() {
