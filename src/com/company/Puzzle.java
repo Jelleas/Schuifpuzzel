@@ -3,88 +3,29 @@ package com.company;
 import java.util.*;
 
 public class Puzzle {
-    private class Coord {
-        public final int x, y;
-
-        public Coord(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        public List<Coord> getNeigbours() {
-            List<Coord> coords = new ArrayList<Coord>();
-            coords.add(new Coord(this.x - 1, this.y));
-            coords.add(new Coord(this.x + 1, this.y));
-            coords.add(new Coord(this.x, this.y - 1));
-            coords.add(new Coord(this.x, this.y + 1));
-
-            // TODO refactor with JDK 1.8: removeIf
-            for (int i = coords.size() - 1; i >= 0; i--) {
-                if (!inField(coords.get(i)))
-                    coords.remove(coords.get(i));
-            }
-
-            return coords;
-        }
-    }
-
-    private int size;
-    private Token[][] puzzle;
+    private Board board;
 
     public static Puzzle initPuzzle1() {
-        Puzzle p = new Puzzle();
-        p.size = 3;
-        p.puzzle = new Token[p.size][p.size];
+        int size = 3;
+        Token[][] puzzle = new Token[size][size];
 
-        Integer[][] tokens = {{1, 4, 2},
-                              {5, 0, 8},
-                              {3, 6, 7}};
+        Integer[][] tokens = {{1, 5, 3},
+                              {4, 0, 6},
+                              {2, 8, 7}};
 
-        for (int i = 0; i < p.size; i++)
-            for (int j = 0; j < p.size; j++)
-                p.puzzle[i][j] = new Token(tokens[i][j]);
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                puzzle[i][j] = new Token(tokens[i][j]);
 
-        return p;
+        return new Puzzle(puzzle);
     }
 
-    // Default blank constructor
-    private Puzzle(){}
-
-    // Copy constructor
-    private Puzzle(Puzzle puzzle) {
-        this.size = puzzle.size;
-        this.puzzle = new Token[this.size][this.size];
-
-        for (int i = 0; i < this.size; i++)
-            for (int j = 0; j < this.size; j++)
-                this.puzzle[i][j] = new Token(puzzle.puzzle[i][j]);
+    private Puzzle(Token[][] puzzle) {
+        this.board = new Board(puzzle);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof Puzzle) {
-            Puzzle p = (Puzzle)o;
-
-            if (this.uniqueRepr().equals(p.uniqueRepr()))
-                return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return uniqueRepr().hashCode();
-    }
-
-    private String uniqueRepr() {
-        String repr = "";
-
-        for (int i = 0; i < this.size; i++)
-            for (int j = 0; j < this.size; j++)
-                repr += this.puzzle[i][j].getSign() + ",";
-
-        return repr;
+    private Puzzle(Puzzle otherPuzzle) {
+        this.board = new Board(otherPuzzle.board);
     }
 
     public List<Puzzle> solve() {
@@ -95,6 +36,7 @@ public class Puzzle {
         path.addFirst(this);
         queue.addFirst(path);
         set.add(this);
+
 
         while (!queue.isEmpty()) {
             LinkedList<Puzzle> currentPath = queue.poll();
@@ -123,14 +65,17 @@ public class Puzzle {
         Coord emptyCoord = findEmpty();
         List<Coord> neighbours = emptyCoord.getNeigbours();
 
+        // TODO refactor with JDK 1.8: removeIf
+        for (int i = neighbours.size() - 1; i >= 0; i--) {
+            if (!board.inField(neighbours.get(i)))
+                neighbours.remove(neighbours.get(i));
+        }
+
         List<Puzzle> puzzles = new ArrayList<Puzzle>();
 
         for (Coord neighbour : neighbours) {
             Puzzle p = new Puzzle(this);
-
-            Token tmp = p.puzzle[neighbour.x][neighbour.y];
-            p.puzzle[neighbour.x][neighbour.y] = this.puzzle[emptyCoord.x][emptyCoord.y];
-            p.puzzle[emptyCoord.x][emptyCoord.y] = tmp;
+            p.move(emptyCoord, neighbour);
             puzzles.add(p);
         }
 
@@ -140,44 +85,73 @@ public class Puzzle {
     public boolean isSolved() {
         int previous = 0;
 
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                int current = this.puzzle[i][j].getSign();
-                current = current == 0 ? size * size : current;
+        for (Token token : board) {
+            int current = token.getSign();
+            current = current == 0 ? size() * size() : current;
 
-                if (current <= previous)
-                    return false;
+            if (current <= previous)
+                return false;
 
-                previous = current;
-            }
+            previous = current;
         }
 
         return true;
     }
 
-    private boolean inField(Coord coord) {
-        return coord.x >= 0 && coord.x < size &&
-               coord.y >= 0 && coord.y < size;
+    private void move(Coord c1, Coord c2) {
+        board.swap(c1, c2);
+    }
+
+    private Coord findEmpty() {
+        int i = 0;
+
+        for (Token token : board) {
+            if (token.isEmpty()) {
+                int x = i % size();
+                int y = i / size();
+                return new Coord(x, y);
+            }
+            i++;
+        }
+
+        return null;
+    }
+
+    public int size() {
+        return this.board.size();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Puzzle) {
+            Puzzle p = (Puzzle)o;
+
+            if (board.equals(p.board))
+                return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return board.hashCode();
     }
 
     public String toString() {
         String repr = "";
+        int i = 0;
+        int size = size();
 
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                repr += this.puzzle[i][j] + ", ";
-            }
-            repr += "\n";
+        for (Token token : board) {
+            repr += token + ", ";
+
+            if (i % size == size - 1)
+                repr += "\n";
+
+            i++;
         }
 
         return repr;
-    }
-
-    private Coord findEmpty() {
-        for (int i = 0; i < this.size; i++)
-            for (int j = 0; j < this.size; j++)
-                if (this.puzzle[i][j].isEmpty())
-                    return new Coord(i, j);
-        return null;
     }
 }
