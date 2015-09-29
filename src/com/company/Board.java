@@ -20,15 +20,16 @@ public class Board implements Iterable<Token> {
         }
 
         public Token next() {
-            if (hasNext()) {
-                int x = cursor % board.size();
-                int y = cursor / board.size();
-                Token token = board.get(new Coord(x, y));
-
-                cursor += 1;
-                return token;
+            if (!hasNext()) {
+                throw new NoSuchElementException();
             }
-            throw new NoSuchElementException();
+
+            int x = cursor % board.size();
+            int y = cursor / board.size();
+            Token token = board.get(new Coord(x, y));
+
+            cursor += 1;
+            return token;
         }
 
         public void remove() {

@@ -28,6 +28,25 @@ public class Puzzle {
         this.board = new Board(otherPuzzle.board);
     }
 
+    private void move(Coord c1, Coord c2) {
+        board.swap(c1, c2);
+    }
+
+    private Coord findEmpty() {
+        int i = 0;
+
+        for (Token token : board) {
+            if (token.isEmpty()) {
+                int x = i % size();
+                int y = i / size();
+                return new Coord(x, y);
+            }
+            i++;
+        }
+
+        return null;
+    }
+
     public List<Puzzle> solve() {
         LinkedList<LinkedList<Puzzle>> queue = new LinkedList<LinkedList<Puzzle>>();
         Set<Puzzle> set = new HashSet<Puzzle>();
@@ -37,10 +56,9 @@ public class Puzzle {
         queue.addFirst(path);
         set.add(this);
 
-
         while (!queue.isEmpty()) {
             LinkedList<Puzzle> currentPath = queue.poll();
-            Puzzle currentPuzzle = currentPath.peek();
+            Puzzle currentPuzzle = currentPath.peekLast();
 
             if (currentPuzzle.isSolved())
                 return currentPath;
@@ -53,7 +71,7 @@ public class Puzzle {
 
                 set.add(reachable);
                 LinkedList<Puzzle> reachablePath = new LinkedList<Puzzle>(currentPath);
-                reachablePath.addFirst(reachable);
+                reachablePath.addLast(reachable);
                 queue.addLast(reachablePath);
             }
         }
@@ -63,12 +81,11 @@ public class Puzzle {
 
     public List<Puzzle> getReachables() {
         Coord emptyCoord = findEmpty();
-        List<Coord> neighbours = emptyCoord.getNeigbours();
 
-        // TODO refactor with JDK 1.8: removeIf
-        for (int i = neighbours.size() - 1; i >= 0; i--) {
-            if (!board.inField(neighbours.get(i)))
-                neighbours.remove(neighbours.get(i));
+        List<Coord> neighbours = new ArrayList<Coord>();
+        for (Coord candidateNeighbour : emptyCoord.getNeigbours()) {
+            if (board.inField(candidateNeighbour))
+                neighbours.add(candidateNeighbour);
         }
 
         List<Puzzle> puzzles = new ArrayList<Puzzle>();
@@ -98,25 +115,6 @@ public class Puzzle {
         return true;
     }
 
-    private void move(Coord c1, Coord c2) {
-        board.swap(c1, c2);
-    }
-
-    private Coord findEmpty() {
-        int i = 0;
-
-        for (Token token : board) {
-            if (token.isEmpty()) {
-                int x = i % size();
-                int y = i / size();
-                return new Coord(x, y);
-            }
-            i++;
-        }
-
-        return null;
-    }
-
     public int size() {
         return this.board.size();
     }
@@ -138,6 +136,7 @@ public class Puzzle {
         return board.hashCode();
     }
 
+    @Override
     public String toString() {
         String repr = "";
         int i = 0;
