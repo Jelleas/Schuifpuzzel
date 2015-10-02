@@ -80,33 +80,35 @@ public class Board implements Iterable<Token> {
         return this.size;
     }
 
-    private String uniqueRepr() {
-        String repr = "";
-
-        for (Token token : this)
-            repr += token.getSign() + ",";
-
-        return repr;
-    }
-
     public Iterator<Token> iterator() {
         return new BoardIterator(this);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Board) {
-            Board b = (Board)o;
-
-            if (this.uniqueRepr().equals(b.uniqueRepr()))
-                return true;
+        if (!(o instanceof Board)) {
+            return false;
         }
 
-        return false;
+        Board other = (Board)o;
+
+        if (this.size() != other.size())
+            return false;
+
+        Iterator<Token> thisIterator = this.iterator();
+        Iterator<Token> otherIterator = other.iterator();
+        while (thisIterator.hasNext() && otherIterator.hasNext())
+            if (thisIterator.next() != otherIterator.next())
+                return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return uniqueRepr().hashCode();
+        int hash = 1;
+        for (Token token : this)
+            hash = hash * 10 + token.getSign();
+        return hash;
     }
 }

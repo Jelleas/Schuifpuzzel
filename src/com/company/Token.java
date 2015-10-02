@@ -23,4 +23,14 @@ public class Token {
     public String toString() {
         return sign.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Token && ((Token)o).sign.equals(this.sign);
+    }
+
+    @Override
+    public int hashCode() {
+        return sign;
+    }
 }
